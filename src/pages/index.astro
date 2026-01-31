@@ -5,15 +5,10 @@ import { getCollection } from 'astro:content';
 
 // Fetch all collections
 const allPages = await getCollection('pages');
-
-// 1. UPDATED: Fetch 'issues' instead of 'news'
 const allIssues = await getCollection('issues');
 
-const allWork = await getCollection('work');
-const allSold = await getCollection('sold');
-
-// 2. UPDATED: Add 'allIssues' to the content list
-const allContent = [...allPages, ...allIssues, ...allWork, ...allSold];
+// Combine for filtering out Drafts
+const allContent = [...allPages, ...allIssues];
 
 // Filter for pagetype containing 'main', sort by number, AND hide drafts
 const posts = allContent.filter(item => {
