@@ -5,12 +5,15 @@ import { getCollection } from 'astro:content';
 
 // Fetch all collections
 const allPages = await getCollection('pages');
-const allNews = await getCollection('news');
+
+// 1. UPDATED: Fetch 'issues' instead of 'news'
+const allIssues = await getCollection('issues');
+
 const allWork = await getCollection('work');
 const allSold = await getCollection('sold');
 
-// Combine for filtering
-const allContent = [...allPages, ...allNews, ...allWork, ...allSold];
+// 2. UPDATED: Add 'allIssues' to the content list
+const allContent = [...allPages, ...allIssues, ...allWork, ...allSold];
 
 // Filter for pagetype containing 'main', sort by number, AND hide drafts
 const posts = allContent.filter(item => {
@@ -30,7 +33,9 @@ const posts = allContent.filter(item => {
 
 // Get index-page metadata (from pages collection)
 const indexPage = allPages.find(p => p.slug === 'index');
-const title = indexPage?.data.title || 'Clay';
+
+// 3. UPDATED: Default title is now 'Saudade Magazine'
+const title = indexPage?.data.title || 'Saudade Magazine';
 const description = indexPage?.data.description;
 
 let postCounter = 0;

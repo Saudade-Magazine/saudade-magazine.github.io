@@ -17,7 +17,8 @@ const commonSchema = z.object({
   draft: z.boolean().optional(),
 }).partial();
 
-const news = defineCollection({
+// 1. RENAMED 'news' TO 'issues'
+const issues = defineCollection({
   type: 'content',
   schema: commonSchema,
 });
@@ -38,9 +39,8 @@ const pages = defineCollection({
 });
 
 export const collections = {
-  news,
+  issues, // Exporting the new collection name
   work,
   sold,
   pages,
 };
-
