@@ -13,6 +13,8 @@ const commonSchema = z.object({
   subheading: z.string().optional(),
   number: z.number().optional(),
   pagetype: z.array(z.string()).optional(),
+  // Provision for Git push Draft Posts
+  draft: z.boolean().optional(),
 }).partial();
 
 const news = defineCollection({
@@ -41,3 +43,4 @@ export const collections = {
   sold,
   pages,
 };
+

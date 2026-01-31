@@ -12,7 +12,21 @@ const allSold = await getCollection('sold');
 // Combine for filtering
 const allContent = [...allPages, ...allNews, ...allWork, ...allSold];
 
-// Filter for pagetype containing 'main' and sort by number
+// Filter for pagetype containing 'main', sort by number, AND hide drafts
+const posts = allContent.filter(item => {
+    // 1. EXISTING LOGIC: Keep items tagged 'main'
+    const isMain = item.data.pagetype && item.data.pagetype.includes('main');
+
+    // 2. NEW LOGIC: Hide drafts if we are in Production mode
+    const isVisible = import.meta.env.PROD ? item.data.draft !== true : true;
+
+    // Only return items that pass BOTH checks
+    return isMain && isVisible;
+}).sort((a, b) => {
+    const numA = a.data.number || 9999;
+    const numB = b.data.number || 9999;
+    return numA - numB;
+});// Filter for pagetype containing 'main' and sort by number
 const posts = allContent.filter(item => {
     return item.data.pagetype && item.data.pagetype.includes('main');
 }).sort((a, b) => {
