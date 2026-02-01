@@ -43,7 +43,7 @@ src/content/
     └── vol-02/
         ├── 01-editorial.md
         └── ...
-'''
+```
 
 ### ⚠️ Crucial Naming Rules
 1.  **Issue Folders:** Must use a consistent naming scheme (e.g., `vol-01`, `issue-jan-2026`). The folder name becomes the URL slug (e.g., `/issues/vol-01`).
@@ -60,12 +60,13 @@ We use standard Markdown (or `.mdx`) with specific frontmatter fields to control
 ### Standard Frontmatter
 Every file must start with this block:
 
-```yaml
+```markdown
 ---
 title: "The Article Title"
 description: "A short summary for SEO."
 date: 2026-02-01
 ---
+```
 
 ### Page Breaks
 The website is responsive. Text flows automatically from page to page.
@@ -77,6 +78,7 @@ Here is the end of the intro text.
 ---
 ## Chapter 2
 
+```
 
 ## 🎨 Customization Guide
 
@@ -87,7 +89,7 @@ This project supports **Granular Customization**, allowing you to style a single
 
 Add these fields to your article's frontmatter:
 
-```yaml
+```markdown
 ---
 title: "Noir Detective Story"
 customClass: "noir-theme"       # 1. Define a class name
@@ -101,6 +103,8 @@ customCSS: |                    # 2. Write CSS for that class
     color: #ff0000;
   }
 ---
+```
+
 *Note: The `customClass` is automatically applied to every page div that contains this article's content.*
 
 ### Level 2: Whole Issue Customization
@@ -108,7 +112,7 @@ customCSS: |                    # 2. Write CSS for that class
 
 Add `issueGlobalCSS` to the **first file** (e.g., `01-intro.md`) of that issue folder:
 
-```yaml
+```markdown
 ---
 title: "Issue Introduction"
 issueGlobalCSS: |
@@ -122,6 +126,7 @@ issueGlobalCSS: |
     border-color: #000088;
   }
 ---
+```
 
 ### Level 3: Global Site Customization
 *Target:* Permanent changes to the website design.
@@ -197,3 +202,4 @@ Images are responsive by default.
 # Section 2: A New Page
 
 Everything after the horizontal rule (`---`) will start on a fresh page, regardless of how much space was left on the previous one.
+```
