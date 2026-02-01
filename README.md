@@ -43,6 +43,7 @@ src/content/
     └── vol-02/
         ├── 01-editorial.md
         └── ...
+'''
 
 ### ⚠️ Crucial Naming Rules
 1.  **Issue Folders:** Must use a consistent naming scheme (e.g., `vol-01`, `issue-jan-2026`). The folder name becomes the URL slug (e.g., `/issues/vol-01`).
