@@ -1,201 +1,198 @@
-# 🏺 Clay Theme for Astro
+# Saudade Magazine
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/098d9ba5-fd1a-4c6b-83c1-0b70fd7e017c/deploy-status)](https://app.netlify.com/projects/clay-astro-theme/deploys)
-[![Built with Astro](https://img.shields.io/badge/Built%20with-Astro-orange?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+Welcome to the **Saudade Magazine** repository. This is an open-source, digital magazine built with [Astro](https://astro.build) and a custom responsive flipbook engine (`page-flip`).
 
-A minimalist, image-centric theme for photographers and artists. Originally a Gatsby theme, now fully ported to **Astro** for superior performance and modern development experience.
-
-> **Note**: This theme is a modern Astro port of the beautiful [Clay Theme](https://github.com/lilxyzz/clay-theme) by `lilxyzz`.
-
-<p align="center">
-  <img src="public/img/clay_astro_light.png" width="48%" alt="Light Mode" style="border-radius: 10px; border: 1px solid #ddd;">
-  <img src="public/img/clay_astro_dark.png" width="48%" alt="Dark Mode" style="border-radius: 10px; border: 1px solid #333;">
-</p>
-
-📺 Check out the [Live Demo](https://clay-astro-theme.netlify.app) or view on the [Astro Themes Portal](https://astro.build/themes/details/clay/)
+This documentation is intended for **Authors** (contributing content) and **Maintainers** (managing the codebase).
 
 ---
 
-## ✨ Features
+## 🚀 Getting Started for Authors
 
-- ⚡ **Astro-Powered** - Blazing fast static site generation with zero-JS output by default
-- 🎨 **Beautiful Design** - Minimalist and image-centric layout perfect for portfolios
-- 🔄 **Client Router** - Seamless client-side navigation for an SPA-like feel
-- 📱 **Responsive Design** - Mobile-friendly layout with a collapsible menu
-- 🌗 **Dark Mode** - Native dark mode support with toggle switch and persistence
-- 📝 **CMS Ready** - Optional **Decap CMS** support (disabled by default, see customization section)
-- 🎯 **Scoped CSS** - Modular, component-scoped styles replacing legacy monolithic CSS
-- ✍️ **Typography** - Futura for titles/menu (Small Caps) and EB Garamond for body
-- 📚 **Content Collections** - Type-safe Markdown content management
+If you want to contribute an article or an entire issue, follow this standard Git workflow:
 
----
-
-## 🚀 Getting Started
-
-### Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/clay-astro-theme.git
-cd clay-astro-theme
-
-# Install dependencies and start dev server
-npm install && npm run dev
-```
-
-Visit `http://localhost:4321` to see your site in action! 🎉
-
-### Detailed Installation
-
-If you prefer a step-by-step approach:
-
-1.  **Install Dependencies**:
+1.  **Fork this Repository**: Click the "Fork" button on the top right of this page to create your own copy.
+2.  **Clone your Fork**:
+    ```bash
+    git clone [https://github.com/YOUR_USERNAME/saudade-magazine.git](https://github.com/YOUR_USERNAME/saudade-magazine.git)
+    cd saudade-magazine
+    ```
+3.  **Install Dependencies**:
     ```bash
     npm install
     ```
-
-2.  **Start Development Server**:
+4.  **Run the Development Server**:
     ```bash
     npm run dev
     ```
-
-3.  **Build for Production**:
-    ```bash
-    npm run build
-    ```
-    The output will be in the `dist/` directory, ready for deployment.
+    Your site will be live at `http://localhost:4321`.
 
 ---
 
-## 🛠️ Tech Stack
+## 📂 Project Structure & Naming Conventions
 
-- **[Astro](https://astro.build)** - Static Site Generator
-- **[Decap CMS](https://decapcms.org/)** - Headless CMS (optional, disabled by default)
-- **[PostCSS](https://postcss.org/)** - CSS Processing
-- **TypeScript** - Type Safety
-- **Markdown/MDX** - Content Management
+The magazine uses a unique **"Folder-as-Issue"** architecture.
 
-### Key Dependencies
-
-- **Core**: `astro`
-- **Integrations**: `@astrojs/sitemap`
-- **Styling**: `postcss`, `autoprefixer`
-  - Plugins: `postcss-color-function`, `postcss-custom-properties`, `postcss-easy-import`
-
----
-
-## 📁 Project Structure
-
+### Directory Layout
 ```text
-/
-├── public/                 # Static assets (images, admin config)
-│   ├── admin/              # Decap CMS configuration
-│   └── img/                # Uploaded images
-├── src/
-│   ├── components/         # Reusable Astro components (PostCard, etc.)
-│   ├── content/            # Content Collections (Markdown/MDX)
-│   │   ├── news/           # News/blog posts
-│   │   ├── pages/          # Static pages
-│   │   ├── sold/           # Sold items (for artists)
-│   │   └── work/           # Portfolio work items
-│   ├── layouts/            # Main layouts (Layout.astro)
-│   ├── pages/              # Route definitions
-│   │   ├── index.astro     # Home page
-│   │   ├── [...slug].astro # Dynamic route for generic pages
-│   │   └── work/[slug].astro # Dynamic routes for collections
-│   ├── styles/             # Global variables and resets
-│   │   ├── content.css     # Typography for markdown content
-│   │   └── vars.css        # CSS Variables (Colors, Fonts)
-│   └── templates/          # Templates for different content types
-├── astro.config.mjs        # Astro configuration
-├── postcss.config.cjs      # PostCSS configuration
-└── tsconfig.json           # TypeScript configuration
-```
+src/content/
+└── issues/                  <-- ALL Magazine content lives here
+    ├── vol-01/              <-- This folder represents ONE complete issue
+    │   ├── 01-intro.md      <-- Articles are sorted by filename
+    │   ├── 02-feature.md
+    │   └── 03-poetry.md
+    └── vol-02/
+        ├── 01-editorial.md
+        └── ...
+
+### ⚠️ Crucial Naming Rules
+1.  **Issue Folders:** Must use a consistent naming scheme (e.g., `vol-01`, `issue-jan-2026`). The folder name becomes the URL slug (e.g., `/issues/vol-01`).
+2.  **File Sorting:** The flipbook engine stitches articles together based on **filename order**.
+    * **Correct:** `01-intro.md`, `02-story.md`, `03-conclusion.md`
+    * **Incorrect:** `intro.md`, `story.md` (Ordering will be unpredictable)
 
 ---
 
-## 🎨 Customization
+## 📝 Writing & Formatting
 
-### Fonts & Colors
+We use standard Markdown (or `.mdx`) with specific frontmatter fields to control the flipbook layout.
 
-Edit `src/styles/vars.css` to update CSS variables for colors, fonts, and breakpoints:
+### Standard Frontmatter
+Every file must start with this block:
 
-```css
-:root {
-  --color-primary: #3eb0ef;
-  --color-base: #131313;
-  --font-serif: 'EB Garamond', Georgia, Times, serif;
-  /* ... more variables */
-}
-```
+```yaml
+---
+title: "The Article Title"
+description: "A short summary for SEO."
+date: 2026-02-01
+---
 
-### Content Management
+### Page Breaks
+The website is responsive. Text flows automatically from page to page.
+However, if you want to **force** a page turn (e.g., to end a chapter or isolate an image), use the horizontal rule:
 
-#### Direct Editing (Recommended)
+```markdown
+Here is the end of the intro text.
 
-Add or edit markdown files directly in the `src/content/` folders:
-- `src/content/news/` - Blog posts/news items
-- `src/content/work/` - Portfolio work items
-- `src/content/sold/` - Exhibition/sold items
-- `src/content/pages/` - Static pages (bio, contact, etc.)
+---
+## Chapter 2
 
-#### Decap CMS (Optional)
 
-> **⚠️ Note**: The Decap CMS configuration is **disabled by default** (`public/admin/config.yml.disabled`) to ensure smooth deployments. Netlify Identity (required for the CMS) is now deprecated by Netlify.
+## 🎨 Customization Guide
 
-**For showcase/demo purposes**: The CMS is not needed. Edit content files directly in your repository.
+This project supports **Granular Customization**, allowing you to style a single article, a whole issue, or the entire site independently.
 
-**To enable the CMS for production use**:
+### Level 1: Individual Article Customization
+*Target:* Specific styling for just **one** story (e.g., a "Noir" theme for a detective story).
 
-1. Choose a backend option:
-   - **Git Gateway** (deprecated but functional): Requires Netlify Identity setup
-   - **GitHub/GitLab OAuth**: Direct repository authentication
-   - **Alternative**: Consider modern headless CMS solutions like Sanity, Contentful, or Tina CMS
+Add these fields to your article's frontmatter:
 
-2. Rename the config file:
-   ```bash
-   mv public/admin/config.yml.disabled public/admin/config.yml
-   ```
+```yaml
+---
+title: "Noir Detective Story"
+customClass: "noir-theme"       # 1. Define a class name
+customCSS: |                    # 2. Write CSS for that class
+  .noir-theme {
+    background-color: #111;
+    color: #ddd;
+    font-family: 'Courier New', monospace;
+  }
+  .noir-theme h1 {
+    color: #ff0000;
+  }
+---
+*Note: The `customClass` is automatically applied to every page div that contains this article's content.*
 
-3. Update the backend configuration in `public/admin/config.yml` based on your chosen authentication method
+### Level 2: Whole Issue Customization
+*Target:* Styling that applies to the entire flipbook for a specific issue (e.g., changing the Hard Cover color or background).
 
-4. For Git Gateway (if using despite deprecation):
-   - Enable Netlify Identity in your site settings
-   - Enable Git Gateway under Identity → Services
-   - Note: Netlify recommends migrating to Auth0 or other solutions
+Add `issueGlobalCSS` to the **first file** (e.g., `01-intro.md`) of that issue folder:
 
-### Navigation
+```yaml
+---
+title: "Issue Introduction"
+issueGlobalCSS: |
+  /* Change the background BEHIND the book */
+  .book-viewport {
+    background: radial-gradient(#2a2a2a, #000);
+  }
+  /* Change the Hard Cover style for this issue only */
+  .page.hard {
+    background-color: darkblue;
+    border-color: #000088;
+  }
+---
 
-Edit the `<nav>` section in `src/layouts/Layout.astro` to customize menu links.
+### Level 3: Global Site Customization
+*Target:* Permanent changes to the website design.
+
+* **Global Variables:** `src/styles/vars.css` (Colors, basic fonts).
+* **Tailwind Config:** `tailwind.config.mjs` (Utility classes).
+* **Flipbook Logic:** `src/pages/issues/[slug].astro`
+    * *Modify `CONFIG` object inside the `<script>` tag to adjust:*
+        * `minFontSize` / `maxFontSize` (Fluid typography scaling)
+        * `multiColumnThreshold` (When to switch to 2-column layout)
 
 ---
 
-## 🚀 Deployment
+## 🛠 Maintainer Commands
 
-### Deploy to Netlify
+| Command | Action |
+| :--- | :--- |
+| `npm install` | Installs dependencies (ensure `page-flip` is installed). |
+| `npm run dev` | Starts local dev server at `localhost:4321`. |
+| `npm run build` | Builds your production site to `./dist/`. |
+| `npm run preview` | Preview your build locally before deploying. |
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
+### Deployment
+This site is configured for GitHub Pages.
+1.  Push changes to the `main` branch.
+2.  The GitHub Action `deploy.yml` will automatically build and deploy the site.
 
-### Deploy to Vercel
+### 📄 Template Issue File
+Create a file named `01-template.md` (or similar) to start a new article.
 
-```bash
-npm run build
-# Upload dist/ folder to Vercel
-```
+```markdown
+---
+# === REQUIRED METADATA ===
+title: "Article Title"
+description: "A brief summary for SEO and previews."
+date: 2026-03-15
 
+# === LEVEL 1: ARTICLE CUSTOMIZATION (Optional) ===
+# Assign a unique class to all pages containing this specific article.
+# customClass: "theme-noir"
+
+# Write CSS that applies ONLY to pages with the class above.
+# customCSS: |
+#   .theme-noir {
+#     background-color: #1a1a1a;
+#     color: #e0e0e0; 
+#   }
+#   .theme-noir h1 { font-family: 'Courier New', monospace; }
+
+# === LEVEL 2: ISSUE GLOBAL CSS (Optional) ===
+# NOTE: Only include this field in the FIRST file (e.g., 01-intro.md) of the issue folder.
+# This CSS applies to the entire flipbook container and hard covers.
+# issueGlobalCSS: |
+#   .book-viewport { background: #111; }
+#   .page.hard { background-color: #8b0000; }
 ---
 
-## 📝 License
+# Section 1: Introduction
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+Write your article content here. The text will flow naturally across pages based on the reader's screen size.
+
+## Typography
+You can use standard Markdown:
+* **Bold text** for emphasis.
+* *Italic text* for voice.
+* > Blockquotes for excerpts.
+
+## Images
+Images are responsive by default. 
+![Description of image](./my-image.jpg)
 
 ---
+# Section 2: A New Page
 
-## 🙏 Credits
-
-- **Original Theme**: [Clay Theme](https://github.com/lilxyzz/clay-theme) by `lilxyzz`
-- **Framework**: [Astro](https://astro.build)
-- **CMS**: [Decap CMS](https://decapcms.org/)
-
-<p align="center">Made with ❤️ using Astro</p>
+Everything after the horizontal rule (`---`) will start on a fresh page, regardless of how much space was left on the previous one.
