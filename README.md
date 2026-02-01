@@ -13,8 +13,10 @@ If you want to contribute an article or an entire issue, follow this standard Gi
 1.  **Fork this Repository**: Click the "Fork" button on the top right of this page to create your own copy.
 2.  **Clone your Fork**:
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/saudade-magazine.git](https://github.com/YOUR_USERNAME/saudade-magazine.git)
-    cd saudade-magazine
+    git clone https://github.com/YOUR_USERNAME/saudade-magazine.git
+    ```
+    ```bash
+    cd saudade-magazine.github.io
     ```
 3.  **Install Dependencies**:
     ```bash
