@@ -19,16 +19,29 @@ export async function getStaticPaths() {
 }
 
 const { issueId, articles } = Astro.props;
+
+// 1. EXTRACT GLOBAL CSS (From the first article in the issue)
+// If the first article has 'issueGlobalCSS', we apply it to the whole page.
+const firstArticle = articles[0];
+const globalCSS = firstArticle?.data.issueGlobalCSS || "";
+
+// 2. PREPARE ARTICLE CSS
+// We combine all customCSS from all articles into one style block
+const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
 ---
 
 <Layout title={`Issue ${issueId} | Saudade Magazine`}>
 
+  <style set:html={globalCSS + "\n" + allCustomCSS}></style>
+
   <div id="raw-source" style="display: none;">
     <div id="meta-title" data-title={issueId}></div>
+
     {articles.map(async (article) => {
       const { Content } = await article.render();
+      // We pass the 'customClass' as a data attribute so JS can read it
       return (
-        <div class="chapter-stream">
+        <div class="chapter-stream" data-custom-class={article.data.customClass || ""}>
           <Content />
           <hr class="chapter-break" />
         </div>
@@ -48,20 +61,9 @@ const { issueId, articles } = Astro.props;
 
   let bookInstance = null;
   let resizeTimer;
-
-  // --- CONFIGURATION ---
-  const CONFIG = {
-    // Constraint 1: Font Scaling
-    minFontSize: 16,
-    maxFontSize: 20,
-
-    // Constraint 3: Column Logic
-    multiColumnThreshold: 500, // If a SINGLE page is wider than this, use 2 cols
-  };
+  const CONFIG = { minFontSize: 16, maxFontSize: 20, multiColumnThreshold: 500 };
 
   document.addEventListener('DOMContentLoaded', initBook);
-
-  // Debounced Resize Handler
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
@@ -79,146 +81,122 @@ const { issueId, articles } = Astro.props;
     const loader = document.getElementById('loader');
     loader.style.display = 'block';
 
-    // 1. CALCULATE DIMENSIONS & LAYOUT MODE
     const winW = window.innerWidth;
     const winH = window.innerHeight;
-
-    // Determine Viewport Ratio (Portrait vs Landscape)
     const isLandscape = winW > winH;
-
-    // Fluid Page Sizing:
-    // Landscape: Book = 80% width (2 pages). Page = 40% width.
-    // Portrait: Book = 95% width (1 page). Page = 95% width.
     const bookWidth = isLandscape ? Math.min(winW * 0.9, 1400) : winW * 0.95;
     const bookHeight = winH * 0.85;
-
-    // Single Page Dimensions
     const pageWidth = isLandscape ? bookWidth / 2 : bookWidth;
     const pageHeight = bookHeight;
-
-    // Decide Layout: Single or Multi-Column?
     const useMultiColumn = pageWidth > CONFIG.multiColumnThreshold;
 
-    // 2. TYPESETTING ENGINE
+    // --- TYPESETTING ENGINE UPDATES ---
 
-    // Flatten all content into a stream of nodes
+    // 1. Tag Nodes with their Article Class
+    // We flatten the nodes but attach the "parent class" to each node so we track it
     const streamNodes = [];
     source.querySelectorAll('.chapter-stream').forEach(chapter => {
+      const articleClass = chapter.getAttribute('data-custom-class');
+
       Array.from(chapter.children).forEach(child => {
-        streamNodes.push(child.cloneNode(true));
+        // Clone the node
+        const clone = child.cloneNode(true);
+        // Attach the class to the node object itself (as a property) for tracking
+        (clone as any)._articleClass = articleClass;
+        streamNodes.push(clone);
       });
     });
 
-    // Helper: Create Blank Page
-    function createPage(isHard = false) {
+    // Helper: Create Page with Dynamic Class
+    function createPage(isHard = false, extraClass = "") {
       const page = document.createElement('div');
-      page.className = isHard ? 'page hard' : 'page';
+
+      // HERE IS THE MAGIC:
+      // We add the 'extraClass' (the article's custom class) to the page div.
+      // This allows CSS like ".my-class .page-content { ... }" to work.
+      page.className = isHard ? 'page hard' : `page ${extraClass}`;
+
       page.style.width = `${pageWidth}px`;
       page.style.height = `${pageHeight}px`;
 
       const content = document.createElement('div');
       content.className = 'page-content';
-
-      // Constraint 3: Apply Multi-Column Class if specific widths met
-      if (useMultiColumn && !isHard) {
-        content.classList.add('multi-col');
-      }
+      if (useMultiColumn && !isHard) content.classList.add('multi-col');
 
       page.appendChild(content);
       return { page, content };
     }
 
-    // -- Cover Page --
+    // Cover
     const title = document.getElementById('meta-title').getAttribute('data-title');
     const cover = createPage(true);
-    cover.content.innerHTML = `
-      <div class="cover-design">
-        <h1>${title.replace(/-/g, ' ').toUpperCase()}</h1>
-      </div>`;
+    cover.content.innerHTML = `<div class="cover-design"><h1>${title.replace(/-/g, ' ').toUpperCase()}</h1></div>`;
     bookEl.appendChild(cover.page);
 
-    // -- Content Loop --
-    let currPage = createPage();
-    bookEl.appendChild(currPage.page);
+    // Content Loop
+    // We need to track which article class belongs to the current page
+    let currentArticleClass = streamNodes[0]?._articleClass || "";
+    let currPage = createPage(false, currentArticleClass);
 
-    // Pre-calculation variables
-    // We deduct padding (roughly 80px total vertical) to find safe area
+    bookEl.appendChild(currPage.page);
     const safeHeight = pageHeight - 80;
-    const safeWidth = pageWidth - 60;
 
     for (let i = 0; i < streamNodes.length; i++) {
       const node = streamNodes[i];
       const isHR = node.tagName === 'HR';
 
-      // Constraint 4: Forced Page Break via <hr>
+      // Check if we switched articles (the node has a different class than the page)
+      const nodeClass = (node as any)._articleClass || "";
+
+      // If the new node belongs to a different article, force a page turn
+      // to ensure the new page gets the new class
+      if (nodeClass !== currentArticleClass && !isHR) {
+         currentArticleClass = nodeClass;
+         // Finish old page
+         currPage = createPage(false, currentArticleClass);
+         bookEl.appendChild(currPage.page);
+      }
+
       if (isHR) {
-        // If the page is not empty, finish it and start new
         if (currPage.content.children.length > 0) {
-           currPage = createPage();
+           currPage = createPage(false, currentArticleClass);
            bookEl.appendChild(currPage.page);
         }
-        continue; // Skip the actual HR element
+        continue;
       }
 
-      // Append node to test fit
       currPage.content.appendChild(node);
 
-      // Constraint 3 (Refined): Fluid placement of Images
-      if (node.tagName === 'IMG' && useMultiColumn) {
-        // If image is wide/landscape, span both columns
-        if (node.naturalWidth > node.naturalHeight || node.clientWidth > safeWidth * 0.4) {
-             node.style.columnSpan = 'all';
-        }
-      }
-
-      // OVERFLOW DETECTION
+      // Overflow Check
       let hasOverflow = false;
-
       if (useMultiColumn) {
-        // In Multi-Col (CSS Columns), overflow goes Right (ScrollWidth)
-        // We check if content is wider than the container allowed
-        if (currPage.content.scrollWidth > currPage.content.clientWidth + 10) {
-          hasOverflow = true;
-        }
+        if (currPage.content.scrollWidth > currPage.content.clientWidth + 10) hasOverflow = true;
       } else {
-        // In Single-Col, overflow goes Down (ScrollHeight)
-        if (currPage.content.scrollHeight > safeHeight) {
-          hasOverflow = true;
-        }
+        if (currPage.content.scrollHeight > safeHeight) hasOverflow = true;
       }
 
       if (hasOverflow) {
-        // Remove node from current page
         currPage.content.removeChild(node);
-
-        // Create new page
-        currPage = createPage();
+        currPage = createPage(false, currentArticleClass);
         bookEl.appendChild(currPage.page);
-
-        // Add node to new page
         currPage.content.appendChild(node);
       }
     }
 
-    // -- Back Cover --
     const back = createPage(true);
     back.content.innerHTML = `<div class="cover-design"><p>End.</p></div>`;
     bookEl.appendChild(back.page);
 
-    // 3. INITIALIZE LIBRARY
     setTimeout(() => {
         bookInstance = new PageFlip(bookEl, {
             width: pageWidth,
             height: pageHeight,
             size: 'fixed',
-            // Constraint 2: Fluidity between Single/Both Sided
-            // If landscape, show 2 pages. If portrait, show 1.
             usePortrait: !isLandscape,
             showCover: true,
             maxShadowOpacity: 0.5,
             mobileScrollSupport: true
         });
-
         bookInstance.loadFromHTML(document.querySelectorAll('.page'));
         loader.style.display = 'none';
     }, 100);
@@ -226,81 +204,13 @@ const { issueId, articles } = Astro.props;
 </script>
 
 <style>
-  /* Base Viewport */
-  .book-viewport {
-    height: 100vh;
-    width: 100%;
-    background: #1a1a1a;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-  }
-
-  .loader {
-    position: absolute;
-    color: white;
-    background: rgba(0,0,0,0.8);
-    padding: 1rem 2rem;
-    border-radius: 4px;
-    z-index: 99;
-  }
-
-  /* --- PAGE STYLING --- */
-  :global(.page) {
-    background-color: #fdfdfd;
-    overflow: hidden;
-    box-shadow: inset 2px 0 10px rgba(0,0,0,0.05);
-  }
-
-  :global(.page-content) {
-    /* Constraint 1: Min/Max Font Size Fluidity */
-    /* Scales between 16px and 22px depending on viewport width */
-    font-size: clamp(16px, 1.5vw, 22px);
-
-    padding: 40px 30px;
-    height: 100%;
-    box-sizing: border-box;
-    line-height: 1.6;
-    color: #333;
-    text-align: justify;
-  }
-
-  /* Constraint 3: Multi-Column Layout */
-  :global(.multi-col) {
-    column-count: 2;
-    column-gap: 2rem;
-    column-rule: 1px solid #eee;
-    display: block; /* Ensure block for columns to work */
-  }
-
-  /* Image Handling */
-  :global(.page-content img) {
-    max-width: 100%;
-    height: auto;
-    margin: 1rem 0;
-    display: block;
-    border-radius: 2px;
-    /* Prevent images from breaking awkwardly between columns */
-    break-inside: avoid;
-  }
-
-  :global(h1), :global(h2), :global(h3) {
-    break-after: avoid; /* Keep headers with their text */
-    margin-top: 0;
-  }
-
-  /* Hard Covers */
-  :global(.page.hard) {
-    background: #222;
-    color: #fff;
-    border: 1px solid #333;
-  }
-  :global(.cover-design) {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
+  .book-viewport { height: 100vh; width: 100%; background: #1a1a1a; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+  .loader { position: absolute; color: white; background: rgba(0,0,0,0.8); padding: 1rem 2rem; border-radius: 4px; z-index: 99; }
+  :global(.page) { background-color: #fdfdfd; overflow: hidden; box-shadow: inset 2px 0 10px rgba(0,0,0,0.05); }
+  :global(.page-content) { font-size: clamp(16px, 1.5vw, 22px); padding: 40px 30px; height: 100%; box-sizing: border-box; line-height: 1.6; color: #333; text-align: justify; }
+  :global(.multi-col) { column-count: 2; column-gap: 2rem; column-rule: 1px solid #eee; display: block; }
+  :global(.page-content img) { max-width: 100%; height: auto; margin: 1rem 0; display: block; break-inside: avoid; }
+  :global(h1), :global(h2), :global(h3) { break-after: avoid; margin-top: 0; }
+  :global(.page.hard) { background: #222; color: #fff; border: 1px solid #333; }
+  :global(.cover-design) { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 </style>
