@@ -29,6 +29,9 @@ const posts = allContent.filter(item => {
 // Get index-page metadata (from pages collection)
 const indexPage = allPages.find(p => p.slug === 'index');
 
+// Render the content from index.md (This allows you to write the welcome text in Markdown)
+const { Content } = indexPage ? await indexPage.render() : { Content: null };
+
 // 3. UPDATED: Default title is now 'Saudade Magazine'
 const title = indexPage?.data.title || 'Saudade Magazine';
 const description = indexPage?.data.description;
@@ -38,6 +41,16 @@ let postCounter = 0;
 
 <Layout title={title} description={description}>
   <main class="flex flex-col gap-20">
+
+    <section class="text-center py-10">
+      <h1 class="text-5xl font-bold mb-6">{title}</h1>
+
+      {/* Render the text from src/content/pages/index.md */}
+      {Content && <div class="prose mx-auto mb-8"><Content /></div>}
+
+      {/* THE FIX: Changed link to '/contact' (Singular, with slash) */}
+    </section>
+
     {
       posts.map((post) => {
         postCounter++;
