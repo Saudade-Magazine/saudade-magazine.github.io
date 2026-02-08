@@ -1,21 +1,63 @@
 ---
 export interface Props {
   count: number;
-  post: any; // using any for now, better to use CollectionEntry
+  post: any; // Using 'any' for flexibility; eventually, use CollectionEntry<'issues'> for strict typing.
   slug: string;
 }
 
-const { count, post, slug } = Astro.props;
-// If it's a page, go to /slug. If it's an issue, go to /issues/slug.
+const { count, post } = Astro.props;
+
+// ==========================================
+// 1. URL CONSTRUCTION (MODIFIED)
+// ==========================================
+//
+// LOGIC:
+// - If it's a generic Page (like 'about' or 'contact'), link directly to it.
+// - If it's an Issue, we split the slug ('vol-test/01-intro') and grab ONLY the first part ('vol-test').
+// - This generates the link `/issues/vol-test`, which correctly triggers your Flipbook reader.
 const postUrl = post.collection === 'pages'
   ? `/${post.slug}`
-  : `/issues/${post.slug}`;
-const thumbnail = post.data.thumbnail;
+  : `/issues/${post.slug.split('/')[0]}`;
+
+
+// ==========================================
+// 2. IMAGE HANDLER (MODIFIED)
+// ==========================================
+//
+// LOGIC:
+// - Try to find `post.data.thumbnail`.
+// - If that is missing or undefined, use `post.data.cover` instead.
+const thumbnail = post.data.thumbnail || post.data.cover;
+
+
+// ==========================================
+// 3. METADATA EXTRACTION
+// ==========================================
 const title = post.data.title;
+
+
+// ==========================================
+// 4. GRID LAYOUT LOGIC
+// ==========================================
+// PURPOSE: Creates a "Masonry" or uneven grid look.
+// LOGIC:
+// - `count` is the index of the current card (0, 1, 2, etc.).
+// - `count % 3 === 0` checks if the number is divisible by 3 (e.g., 0, 3, 6).
+// - If TRUE, `isLarge` is set to true, allowing you to style this card differently (e.g., span 2 cols).
 const isLarge = count % 3 === 0;
 
-// Construct background image style
+
+// ==========================================
+// 5. CSS STYLE GENERATION
+// ==========================================
+// Dynamic Background:
+// If a thumbnail/cover exists, we create an inline style string to set it as the background image.
 const bgStyle = thumbnail ? `background-image: url(${thumbnail});` : '';
+
+// Class Names:
+// We build the list of HTML classes dynamically based on the state above.
+// - Adds 'post-card-large' if it's the 3rd item.
+// - Adds 'with-image' or 'no-image' so your CSS knows if it needs to overlay text or not.
 const postClass = `post-card ${isLarge ? 'post-card-large' : ''} ${thumbnail ? 'with-image' : 'no-image'} post`;
 ---
 
