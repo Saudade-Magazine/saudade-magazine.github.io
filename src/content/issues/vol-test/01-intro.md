@@ -3,8 +3,8 @@
 title: "Test Title"
 description: "Test Issue to Test the workings and functionalities."
 date: 2026-02-08
-thumbnail: "/img/test-cover-image.jpeg"
-end_cover: "/img/test-back.jpeg"
+front_cover: "/img/test-cover-image.jpeg"
+back_cover: "/img/test-back.jpeg"
 # === LEVEL 1: ARTICLE CUSTOMIZATION (Optional) ===
 # Assign a unique class to all pages containing this specific article.
 # customClass: "theme-noir"

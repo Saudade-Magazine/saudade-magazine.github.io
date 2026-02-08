@@ -29,13 +29,19 @@
         "thumbnail": {
           "type": "string"
         },
-        "templateKey": {
-          "type": "string"
-        },
         "image": {
           "type": "string"
         },
         "featuredimage": {
+          "type": "string"
+        },
+        "front_cover": {
+          "type": "string"
+        },
+        "back_cover": {
+          "type": "string"
+        },
+        "templateKey": {
           "type": "string"
         },
         "heading": {
@@ -55,6 +61,15 @@
         },
         "draft": {
           "type": "boolean"
+        },
+        "customClass": {
+          "type": "string"
+        },
+        "customCSS": {
+          "type": "string"
+        },
+        "issueGlobalCSS": {
+          "type": "string"
         },
         "$schema": {
           "type": "string"

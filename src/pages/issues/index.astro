@@ -3,15 +3,40 @@ import Layout from '../../layouts/Layout.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 
-const posts = await getCollection('issues');
-const sortedPosts = posts.sort((a, b) => new Date(b.data.pubDate).valueOf() - new Date(a.data.pubDate).valueOf());
+// 1. FETCH ALL ISSUES
+const allPosts = await getCollection('issues');
+
+// 2. LOGIC FIX: GROUP BY FOLDER
+// Instead of listing every file, we find unique folder names (e.g. "vol-test")
+const uniqueFolders = [...new Set(allPosts.map(post => post.slug.split('/')[0]))];
+
+// 3. MAP FOLDERS TO A SINGLE REPRESENTATIVE POST
+const sortedPosts = uniqueFolders.map(folder => {
+    // Find all parts belonging to this specific folder
+    const issueParts = allPosts
+        .filter(p => p.slug.startsWith(folder + '/'))
+        .sort((a, b) => a.slug.localeCompare(b.slug));
+    
+    // Return the first part (e.g., 01-intro) to use its cover image and title
+    return issueParts[0]; 
+});
 ---
 
 <Layout title="Issues | Saudade Magazine">
   <main class="content-list">
     <h1 class="page-title">All Issues</h1>
+    
     <div class="posts-grid">
-      {sortedPosts.map((post) => <PostCard post={post} />)}
+      {sortedPosts.map((post) => (
+        // We pass 'count={1}' to ensure the card renders in standard portrait mode
+        // instead of potentially triggering a "landscape" layout.
+        <PostCard post={post} count={1} />
+      ))}
     </div>
+    
+    {sortedPosts.length === 0 && (
+        <p style="text-align: center; color: #888;">No issues found.</p>
+    )}
   </main>
 </Layout>
+

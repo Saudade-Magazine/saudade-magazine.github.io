@@ -3,65 +3,87 @@ import Layout from '../layouts/Layout.astro';
 import PostCard from '../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 
-// Fetch all collections
+// 1. FETCH SITE METADATA
 const allPages = await getCollection('pages');
+const indexPage = allPages.find(p => p.slug === 'index');
+const siteTitle = indexPage?.data.title || 'Saudade Magazine';
+const siteDesc = indexPage?.data.description || 'A stunning magazine theme.';
+
+// 2. PREPARE ISSUES (Horizontal Scroll)
 const allIssues = await getCollection('issues');
+const uniqueIssueFolders = [...new Set(allIssues.map(post => post.slug.split('/')[0]))];
 
-// Combine for filtering out Drafts
-const allContent = [...allPages, ...allIssues];
-
-// Filter for pagetype containing 'main', sort by number, AND hide drafts
-const posts = allContent.filter(item => {
-    // 1. Check if it has the 'main' tag (Theme Requirement)
-    const isMain = item.data.pagetype && item.data.pagetype.includes('main');
-
-    // 2. Check if it is a draft (Our New Feature)
-    const isVisible = import.meta.env.PROD ? item.data.draft !== true : true;
-
-    // Only return items that pass BOTH checks
-    return isMain && isVisible;
-}).sort((a, b) => {
-    const numA = a.data.number || 9999;
-    const numB = b.data.number || 9999;
-    return numA - numB;
+const latestIssues = uniqueIssueFolders.map(folder => {
+    const issueParts = allIssues
+        .filter(p => p.slug.startsWith(folder + '/'))
+        .sort((a, b) => a.slug.localeCompare(b.slug));
+    return issueParts[0]; 
 });
 
-// Get index-page metadata (from pages collection)
-const indexPage = allPages.find(p => p.slug === 'index');
-
-// Render the content from index.md (This allows you to write the welcome text in Markdown)
-const { Content } = indexPage ? await indexPage.render() : { Content: null };
-
-// 3. UPDATED: Default title is now 'Saudade Magazine'
-const title = indexPage?.data.title || 'Saudade Magazine';
-const description = indexPage?.data.description;
-
-let postCounter = 0;
+// 3. PREPARE PAGES (Grid Layout)
+const targetPages = ['about', 'contact', 'privacy-policy', 'terms-of-use'];
+const footerPages = targetPages
+    .map(slug => allPages.find(p => p.slug === slug))
+    .filter(p => p !== undefined);
 ---
 
-<Layout title={title} description={description}>
-  <main class="flex flex-col gap-20">
+<Layout title={siteTitle} description={siteDesc}>
+  <main class="flex flex-col gap-16 py-10">
 
-    <section class="text-center py-10">
-      <h1 class="text-5xl font-bold mb-6">{title}</h1>
-
-      {/* Render the text from src/content/pages/index.md */}
-      {Content && <div class="prose mx-auto mb-8"><Content /></div>}
-
-      {/* THE FIX: Changed link to '/contact' (Singular, with slash) */}
+    <section class="text-center px-4">
+        <h1 class="text-6xl font-black uppercase tracking-tighter mb-4">{siteTitle}</h1>
+        <p class="text-xl text-gray-500 font-serif italic">{siteDesc}</p>
     </section>
 
-    {
-      posts.map((post) => {
-        postCounter++;
-        return (
-          <PostCard
-            post={post}
-            reverse={postCounter % 2 === 0}
-            priority={postCounter <= 2}
-          />
-        );
-      })
-    }
+    <section class="w-full">
+        <div class="px-5 mb-6 border-b border-gray-200 pb-2 mx-auto max-w-7xl">
+            <h2 class="text-2xl font-bold uppercase tracking-wide">Latest Issues</h2>
+        </div>
+
+        <div class="flex overflow-x-auto snap-x snap-mandatory gap-6 px-5 pb-8 w-full">
+            {latestIssues.map((post) => (
+                // UPDATE 1: Narrower widths + aspect-[3/4] for Portrait Mode
+                <div class="snap-center shrink-0 w-[70vw] sm:w-[40vw] md:w-[28vw] lg:w-[22vw] aspect-[3/4] relative issue-wrapper">
+                    <PostCard 
+                        post={post} 
+                        count={1} 
+                        slug={post.slug} 
+                    />
+                </div>
+            ))}
+            
+            {latestIssues.length === 0 && (
+                <div class="px-5 text-gray-400 italic">No issues found.</div>
+            )}
+        </div>
+    </section>
+
+    <section class="max-w-7xl mx-auto w-full px-5">
+        <div class="mb-8 border-b border-gray-200 pb-2">
+            <h2 class="text-2xl font-bold uppercase tracking-wide">Information</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {footerPages.map((post, index) => (
+                // We keep 'count={index}' here so the Grid layout still looks dynamic
+                <PostCard 
+                    post={post} 
+                    count={index} 
+                    slug={post.slug} 
+                />
+            ))}
+        </div>
+    </section>
+
   </main>
+
+  <style is:global>
+    /* Force the PostCard inside the issue-wrapper to fill the height */
+    .issue-wrapper .post-card {
+        height: 100% !important;
+        min-height: 100% !important;
+        aspect-ratio: 3/4 !important;
+        background-size: cover !important;
+    }
+  </style>
 </Layout>

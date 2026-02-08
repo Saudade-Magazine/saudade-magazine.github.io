@@ -34,14 +34,17 @@ const renderedArticles = await Promise.all(
 );
 
 // ==========================================
-// 3. METADATA & DEFAULTS
+// 3. METADATA & IMAGES
 // ==========================================
 const firstArticle = articles[0];
-const coverImage = firstArticle?.data.cover || firstArticle?.data.thumbnail || "/img/default-cover.jpeg";
-const endCoverImage = firstArticle?.data.end_cover || "/img/default-back.jpeg";
-const issueTitle = firstArticle?.data.title || "Untitled Issue";
 
-// We keep custom CSS support if you still want to inject it
+// FIX: Ensure fallbacks match your file renaming
+const frontCover = firstArticle?.data.front_cover || "/img/default-front_cover.jpeg";
+const backCover = firstArticle?.data.back_cover || "/img/default-back_cover.jpeg";
+
+const issueTitle = firstArticle?.data.title || "Untitled Issue";
+const issueDate = firstArticle?.data.date ? new Date(firstArticle.data.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Current Issue";
+
 const globalCSS = firstArticle?.data.issueGlobalCSS || "";
 const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
 ---
@@ -52,176 +55,130 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
 
   <style>
     /* ========================================== */
-    /* 1. RESET & LAYOUT (No Tailwind Dependency) */
+    /* 1. RESET & LAYOUT                          */
     /* ========================================== */
-    
-    /* The Stage */
     .book-viewport {
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
+        height: 100vh; width: 100vw; overflow: hidden;
         background-color: #1a1a1a;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: 'Georgia', serif; /* Enforce Serif for Book feel */
+        display: flex; justify-content: center; align-items: center;
+        font-family: 'Georgia', serif; 
     }
 
     .container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        position: relative; width: 100%; height: 100%; 
+        /* Outer padding for the viewport */
+        padding: 20px; 
+        display: flex; justify-content: center; align-items: center;
         box-sizing: border-box;
     }
 
-    /* The Book Itself */
-    .flip-book {
-        display: none; /* Hidden until loaded */
-        box-shadow: 0 0 30px rgba(0,0,0,0.6);
-    }
+    .flip-book { display: none; box-shadow: 0 0 30px rgba(0,0,0,0.6); }
+
+    .page { background-color: #fdfdfd; overflow: hidden; position: relative; }
+    .page.hard { background-color: #111; border: none; }
 
     /* ========================================== */
-    /* 2. PAGE STYLING (Strict Print Rules)       */
+    /* 2. TYPOGRAPHY                              */
     /* ========================================== */
-    .page {
-        background-color: #fdfdfd;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .page.hard {
-        background-color: #111;
-        border: none;
-    }
-
-    /* TYPOGRAPHY */
     .page-content {
-        /* Fluid Font: Minimum 14px, Ideal 1.2vw, Max 18px */
-        font-size: clamp(14px, 1.2vw, 18px);
+        font-size: 15px; 
         line-height: 1.6;
         color: #333;
         text-align: justify;
-        
-        /* SAFE AREA: 40px Top/Bottom, 30px Sides */
-        padding: 40px 30px; 
+        /* NOTE: Padding is applied via JS to ensure perfect sync */
         height: 100%;
+        width: 100%;
         box-sizing: border-box;
-    }
-
-    /* FORCE RESET: Override any global CSS that might leak in */
-    .page-content p { margin: 0 0 1em 0; text-indent: 0; }
-    .page-content h1, .page-content h2, .page-content h3 { line-height: 1.2; margin: 1em 0 0.5em 0; color: #111; font-weight: bold; }
-    .page-content h1 { font-size: 2.2em; border-bottom: 2px solid #111; padding-bottom: 0.2em; }
-    .page-content h2 { font-size: 1.6em; }
-    .page-content ul, .page-content ol { margin: 0 0 1em 1.5em; padding: 0; }
-    .page-content li { margin-bottom: 0.5em; }
-
-    /* BLOCKQUOTES (Fixed) */
-    .page-content blockquote {
-        margin: 1.5em 0;
-        padding-left: 1em;
-        border-left: 4px solid #111;
-        font-style: italic;
-        color: #555;
-        background: transparent;
-    }
-
-    /* IMAGES (Strict Containment) */
-    .page-content img {
+        overflow: hidden;
         display: block;
-        max-width: 100%;
-        /* Cap height at 60% of page to ensure text room */
-        max-height: 60%; 
-        width: auto;
-        height: auto;
-        margin: 1.5em auto;
-        object-fit: contain;
+
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto; 
+    }
+
+    .page-content h1, .page-content h2, .page-content h3 {
+        overflow-wrap: anywhere; 
+        word-break: break-word;
+        line-height: 1.1; 
+        color: #111; 
+        font-weight: bold; 
+        break-after: avoid; 
+        page-break-after: avoid;
+    }
+
+    .page-content h1 { font-size: 1.8em !important; margin: 0 0 0.5em 0; border-bottom: 2px solid #111; padding-bottom: 0.2em; }
+    .page-content h2 { font-size: 1.4em !important; margin: 1em 0 0.5em 0; }
+    .page-content h3 { font-size: 1.2em !important; margin: 1em 0 0.5em 0; }
+    
+    /* Remove default margins from P tags that might hold images */
+    .page-content p { margin: 0 0 1em 0; padding-bottom: 1px; }
+
+    .page-content blockquote {
+        margin: 1.5em 0; padding-left: 1em;
+        border-left: 3px solid #111;
+        font-style: italic; color: #555; background: transparent;
+        font-size: 1em;
     }
 
     /* ========================================== */
-    /* 3. COVER DESIGN (Replaces Tailwind Classes)*/
+    /* 3. STRICT COVER LAYOUT (Flexbox Center)    */
     /* ========================================== */
-    .cover-img {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        object-fit: cover;
-        z-index: 0;
-    }
-
-    .cover-overlay {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 10;
-        /* Gradient Fade for Text Readability */
-        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, transparent 100%);
-    }
-
-    .cover-content {
-        position: absolute;
-        bottom: 0; left: 0; width: 100%;
-        padding: 3rem;
-        box-sizing: border-box;
-        z-index: 20;
+    .cover-container {
+        width: 100%;
+        height: 100%;
+        background-color: #000; /* Black background for letterboxing */
         display: flex;
         flex-direction: column;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: center; /* PERFECT CENTERING */
+        position: relative;
+        overflow: hidden;
     }
 
-    .cover-title {
-        color: white;
-        font-family: 'Times New Roman', serif;
-        font-size: 3.5rem; /* Big Title */
-        font-weight: 900;
-        text-transform: uppercase;
-        line-height: 1;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    .cover-img-strict {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain; /* CRITICAL: Never crop, always fit */
+        z-index: 1;
+        display: block;
     }
 
-    .cover-subtitle {
-        color: #ddd;
-        font-size: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 1rem;
-        border-top: 1px solid #777;
-        padding-top: 1rem;
-        display: inline-block;
-    }
-
-    /* END COVER SPECIFICS */
-    .end-text {
-        color: white;
-        text-transform: uppercase;
-        letter-spacing: 0.3em;
-        font-size: 0.9rem;
-        border-top: 1px solid #555;
-        border-bottom: 1px solid #555;
-        padding: 10px 20px;
-    }
-
-    /* LOADER */
-    .loader {
+    .cover-overlay-strict {
         position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 15px 30px;
-        font-family: monospace;
-        border-radius: 4px;
-        z-index: 100;
+        inset: 0;
+        z-index: 5;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent 60%);
+        pointer-events: none;
     }
+
+    .cover-text-layer {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        z-index: 10;
+        padding: 40px;
+        text-align: center;
+        color: white;
+        pointer-events: none;
+    }
+    
+    .cover-title { 
+        font-size: 3rem; font-weight: 900; 
+        text-transform: uppercase; line-height: 1.1; margin: 0;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.9); 
+    }
+
+    .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 30px; border-radius: 4px; z-index: 100; }
   </style>
 
   <div id="raw-source" style="display: none;">
-      <div id="meta-cover" data-cover={coverImage}></div>
-      <div id="meta-end-cover" data-cover={endCoverImage}></div>
+      <div id="meta-front-cover" data-url={frontCover}></div>
+      <div id="meta-back-cover" data-url={backCover}></div>
       <div id="meta-title" data-title={issueTitle}></div>
+      <div id="meta-date" data-date={issueDate}></div>
 
       {renderedArticles.map(({ params, Content }) => (
         <div class="chapter-stream">
@@ -246,8 +203,8 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
     let bookInstance = null;
     let resizeTimer;
     
-    // CONFIG: Width (px) before we split text into 2 columns
-    const CONFIG = { multiColumnThreshold: 500 };
+    // CONFIG: Define Margin here. This variable controls BOTH CSS and JS Math.
+    const PAGE_MARGIN = 60; 
 
     window.addEventListener('load', () => {
         document.fonts.ready.then(() => initBook());
@@ -270,7 +227,6 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
         const loader = document.getElementById('loader');
         loader.style.display = 'block';
 
-        // 1. CALCULATE DIMENSIONS
         const container = document.querySelector('.container');
         const availW = container.clientWidth;
         const availH = container.clientHeight;
@@ -279,13 +235,10 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
         let pageWidth = isLandscape ? (availW * 0.45) : (availW * 0.95);
         let pageHeight = availH * 0.90;
 
-        // Cap max sizes for desktop readability
         if (pageWidth > 600) pageWidth = 600;
         if (pageHeight > 850) pageHeight = 850;
 
-        const useMultiColumn = pageWidth > CONFIG.multiColumnThreshold;
-
-        // 2. PAGE FACTORY
+        // 2. CREATE PAGE HELPER
         function createPage(isHard = false, extraClass = "") {
             const page = document.createElement('div');
             page.className = isHard ? `page hard ${extraClass}` : `page ${extraClass}`;
@@ -295,28 +248,31 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
             const content = document.createElement('div');
             content.className = 'page-content';
             
-            // Standard CSS Columns (No Tailwind)
-            if (useMultiColumn && !isHard) {
-                content.style.columnCount = "2";
-                content.style.columnGap = "2rem";
-                content.style.columnRule = "1px solid #eee";
-            }
+            // APPLY PADDING DYNAMICALLY
+            // This ensures the visuals match the math exactly.
+            content.style.padding = `${PAGE_MARGIN}px`;
             
             page.appendChild(content);
             return { page, content };
         }
 
-        // 3. GENERATE FRONT COVER
-        const coverUrl = document.getElementById('meta-cover').getAttribute('data-cover');
+        // 3. FRONT COVER (Strict Flexbox Layout)
+        const coverUrl = document.getElementById('meta-front-cover').getAttribute('data-url');
         const title = document.getElementById('meta-title').getAttribute('data-title');
+        const date = document.getElementById('meta-date').getAttribute('data-date');
         
         const frontCover = createPage(true, 'front-cover');
+        // Disable default padding for covers so image can touch edges
+        frontCover.page.querySelector('.page-content').style.padding = "0"; 
+        
         frontCover.page.innerHTML = `
-            <img src="${coverUrl}" class="cover-img" alt="Cover" />
-            <div class="cover-overlay"></div>
-            <div class="cover-content">
-                <h1 class="cover-title">${title}</h1>
-                <div class="cover-subtitle">Issue Preview</div>
+            <div class="cover-container">
+                <img src="${coverUrl}" class="cover-img-strict" />
+                <div class="cover-overlay-strict"></div>
+                <div class="cover-text-layer">
+                    <div style="font-size: 0.8rem; text-transform: uppercase; margin-bottom: 1rem; border-top: 1px solid white; display: inline-block; padding-top: 5px;">${date}</div>
+                    <h1 class="cover-title">${title}</h1>
+                </div>
             </div>
         `;
         bookEl.appendChild(frontCover.page);
@@ -336,13 +292,13 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
         let currPageObj = createPage(false);
         bookEl.appendChild(currPageObj.page);
         
-        // SAFE HEIGHT: Height - Padding (80px) - Buffer (20px)
-        const safeHeight = pageHeight - 100;
+        // CALCULATION: Safe Height = Page Height - (Top Margin + Bottom Margin)
+        // We use the exact PAGE_MARGIN variable here.
+        const safeHeight = pageHeight - (PAGE_MARGIN * 2);
 
         for (let i = 0; i < streamNodes.length; i++) {
-            const node = streamNodes[i];
+            let node = streamNodes[i];
 
-            // A. Manual Page Breaks
             if (node._isBreak) {
                 if (currPageObj.content.children.length > 0) {
                     currPageObj = createPage(false);
@@ -351,37 +307,30 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
                 continue;
             }
 
-            // B. Smart Image Sizing
-            const isImage = node.tagName === 'IMG' || node.querySelector('img');
-            if (isImage) {
-                const img = node.tagName === 'IMG' ? node : node.querySelector('img');
-                
-                // Pure CSS enforcement
-                img.style.maxWidth = "100%";
-                img.style.maxHeight = `${safeHeight * 0.6}px`; // Cap at 60%
-                img.style.width = "auto";
-                img.style.height = "auto";
-                img.style.objectFit = "contain";
-                img.style.display = "block";
-                img.style.margin = "1em auto";
-                
-                // Clean up paragraph wrappers
-                if (node.tagName === 'P') { 
-                    node.style.margin = "0"; 
-                    node.style.padding = "0";
-                }
+            // --- IMAGE UNWRAPPER & RESIZER ---
+            // 1. Detect if image is wrapped in a P tag (Markdown does this)
+            if (node.tagName === 'P' && node.querySelector('img')) {
+                const img = node.querySelector('img');
+                // Extract image, discard the paragraph wrapper
+                node = img; 
             }
 
-            // C. Append & Measure
+            // 2. Strict Sizing for Images
+            if (node.tagName === 'IMG') {
+                node.style.maxHeight = `${safeHeight}px`; // Force it to fit in safe area
+                node.style.maxWidth = "100%";
+                node.style.width = "auto";
+                node.style.height = "auto";
+                node.style.margin = "0 auto";
+                node.style.display = "block";
+                node.style.objectFit = "contain";
+            }
+            // ---------------------------------
+
             currPageObj.content.appendChild(node);
 
-            // D. Overflow Logic
-            let isOverflowing = false;
-            if (useMultiColumn) {
-                isOverflowing = currPageObj.content.scrollWidth > currPageObj.content.clientWidth + 20;
-            } else {
-                isOverflowing = currPageObj.content.scrollHeight > safeHeight;
-            }
+            // Check if we exceeded the safe height
+            const isOverflowing = currPageObj.content.scrollHeight > safeHeight;
 
             if (isOverflowing) {
                 currPageObj.content.removeChild(node);
@@ -391,23 +340,24 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
             }
         }
 
-        // Remove empty last page
         if (currPageObj.content.children.length === 0) {
              bookEl.removeChild(currPageObj.page);
         }
 
-        // 5. GENERATE BACK COVER
-        const endCoverUrl = document.getElementById('meta-end-cover').getAttribute('data-cover');
+        // 5. BACK COVER (Clean - No Text)
+        const endCoverUrl = document.getElementById('meta-back-cover').getAttribute('data-url');
         const backCover = createPage(true, 'back-cover');
+        backCover.page.querySelector('.page-content').style.padding = "0";
+        
         backCover.page.innerHTML = `
-             <img src="${endCoverUrl}" class="cover-img" style="opacity: 0.3;" />
-             <div class="cover-overlay" style="display: flex; align-items: center; justify-content: center;">
-                <div class="end-text">End of Issue</div>
-             </div>
+            <div class="cover-container">
+                <img src="${endCoverUrl}" class="cover-img-strict" />
+                <div class="cover-overlay-strict"></div>
+                </div>
         `;
         bookEl.appendChild(backCover.page);
 
-        // 6. INITIALIZE FLIPBOOK
+        // 6. INIT LIBRARY
         setTimeout(() => {
             bookInstance = new PageFlip(bookEl, {
                 width: pageWidth,
@@ -419,10 +369,9 @@ const allCustomCSS = articles.map(a => a.data.customCSS || "").join("\n");
                 mobileScrollSupport: true
             });
             bookInstance.loadFromHTML(document.querySelectorAll('.page'));
-            
             bookEl.style.display = 'block';
             loader.style.display = 'none';
-        }, 100);
+        }, 500);
     }
   </script>
 </Layout>
